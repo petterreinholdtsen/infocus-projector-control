@@ -1,0 +1,77 @@
+#!/usr/bin/perl
+
+use warnings;
+use strict;
+
+my $port = "/dev/ttyUSB0";
+
+# Set the serial port settings using stty
+system("stty 19200 cs8 -cstopb clocal -ixon -echo < $port");
+
+open (my $fh, "+>$port") or die "can't open $port. ";
+
+# Report status settings
+print cmd("(LMP?)");
+print cmd("(BRT?)");
+print cmd("(ASC?)");
+print cmd("(DSC?)");
+print cmd("(SYS?)");
+print cmd("(LB1?)");
+print cmd("(LB2?)");
+print cmd("(O00?)");
+print cmd("(O30?)");
+print cmd("(O60?)");
+print cmd("(O90?)");
+
+if (defined $ARGV[0]) {
+    if ("power" eq $ARGV[0]) {
+        if ( ! defined $ARGV[1] ) {
+            print cmd("(PWR?)");
+        } elsif ("on" eq $ARGV[1]) {
+            power(1);
+        } elsif ("off" eq $ARGV[1]) {
+            power(0);
+        }
+    }
+    if ("source" eq $ARGV[0]) {
+        if ( ! defined $ARGV[1] ) {
+            print cmd("(SRC?)");
+        } elsif ("hdmi" eq $ARGV[1]) {
+            print cmd("(SRC0)");
+        } elsif ("vga" eq $ARGV[1]) {
+            print cmd("(SRC1)");
+        }
+    }
+    if ("contrast" eq $ARGV[0]) {
+        my $current = cmd("(CON?)");
+        my ($curval) = $current =~ m/\(CON\?\)\(\d+-\d+,(\d+)\)/;
+        if ( ! defined $ARGV[1] ) {
+            print $current;
+        } elsif ("up" eq $ARGV[1]) {
+            my $newval = int($curval * 1.1);
+            print cmd("(CON$newval)");
+        } elsif ("down" eq $ARGV[1]) {
+            my $newval = int($curval * 0.9);
+            print cmd("(CON$newval)");
+        }
+    }
+}
+close ($fh);
+
+exit 0;
+
+sub cmd {
+    my $cmd = shift;
+    print $fh ("$cmd\n");
+    my $R = <$fh>;
+    return $R;
+}
+
+sub power {
+    my $state = shift;
+    if ($state) {
+        print cmd("(PWR1)");
+    } else {
+        print cmd("(PWR0)");
+    }
+}

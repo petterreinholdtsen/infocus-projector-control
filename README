@@ -1,0 +1,14 @@
+Infocus Projector command interface
+===================================
+
+Command line tool to control a Infocus projector, to turn it on or off
+and get status information from it using the serial line.
+
+The protocol is documented on
+<URL: http://www.infocus.com/service/lp1000/rs232.asp > and
+<URL: http://www.aboutprojectors.com/pdf/infocus-play-big-in74ex-manual.pdf >.
+
+Contact info
+------------
+
+Petter Reinholdtsen <pere@hungry.com>
