@@ -1,77 +1,90 @@
-#!/usr/bin/perl
+#!/usr/bin/python3
 
-use warnings;
-use strict;
+from optparse import OptionParser
+import serial
+import time
 
-my $port = "/dev/ttyUSB0";
+class InFocusProjector():
+    def __init__(self):
+        self.ser = serial.Serial(
+            port='/dev/ttyUSB0',
+            baudrate=19200,
+            parity=serial.PARITY_NONE,
+            stopbits=serial.STOPBITS_ONE,
+            bytesize=serial.EIGHTBITS
+        )
+        # ser.isOpen()
+    def _response(self):
+        out = bytes('', 'ASCII')
+        while self.ser.inWaiting() > 0:
+            out += self.ser.read(1)
+        return out
+    def _cmd(self, command):
+        b = "%s\n" % command
+        self.ser.write(bytes(b, 'ASCII'))
+        time.sleep(1)
+        res = self._response()
+        print(res)
+        return res
 
-# Set the serial port settings using stty
-system("stty 19200 cs8 -cstopb clocal -ixon -echo < $port");
+    def status(self):
+        """ Report status settings. """
+        self._cmd("(LMP?)")
+        self._cmd("(BRT?)")
+        self._cmd("(ASC?)")
+        self._cmd("(DSC?)")
+        self._cmd("(SYS?)")
+        self._cmd("(LB1?)")
+        self._cmd("(LB2?)")
+        self._cmd("(O00?)")
+        self._cmd("(O30?)")
+        self._cmd("(O60?)")
+        self._cmd("(O90?)")
 
-open (my $fh, "+>$port") or die "can't open $port. ";
+    def power(self, state):
+        if ('on' == state):
+            print(self._cmd('(PWR1)'))
+        elif ('off' == state):
+            print(self._cmd('(PWR0)'))
+    def source(self, source):
+        if (not source):
+            print(self._cmd('(SRC?)'))
+        elif ('hdmi' == source):
+            print(self._cmd('(SRC0)'))
+        elif ('vga' == source):
+            print(self._cmd('(SRC1)'))
+    def contrast(self, val):
+        current = self._cmd('(CON?)')
+        print(current)
+        r = re.match(current, r'\(CON\?\)\(\d+-\d+,(\d+)\)')
+        curval = int(r.group(2))
+        if ('up' == val):
+            newval = int(curval * 1.1)
+        elif ('down' == val):
+            newval = int(curval * 0.9)
+        print(self._cmd('(CON%d)'))
 
-# Report status settings
-print cmd("(LMP?)");
-print cmd("(BRT?)");
-print cmd("(ASC?)");
-print cmd("(DSC?)");
-print cmd("(SYS?)");
-print cmd("(LB1?)");
-print cmd("(LB2?)");
-print cmd("(O00?)");
-print cmd("(O30?)");
-print cmd("(O60?)");
-print cmd("(O90?)");
+def main():
+    parser = OptionParser(usage="usage: %prog [options]",
+                          version="%prog 0.0")
+    parser.add_option("-s", "--serialport",
+                      action="store",
+                      dest="port",
+                      default="/dev/ttyUSB0",
+                      help="Serial port device",)
+    (options, args) = parser.parse_args()
+    print(options)
+    print(args)
 
-if (defined $ARGV[0]) {
-    if ("power" eq $ARGV[0]) {
-        if ( ! defined $ARGV[1] ) {
-            print cmd("(PWR?)");
-        } elsif ("on" eq $ARGV[1]) {
-            power(1);
-        } elsif ("off" eq $ARGV[1]) {
-            power(0);
-        }
-    }
-    if ("source" eq $ARGV[0]) {
-        if ( ! defined $ARGV[1] ) {
-            print cmd("(SRC?)");
-        } elsif ("hdmi" eq $ARGV[1]) {
-            print cmd("(SRC0)");
-        } elsif ("vga" eq $ARGV[1]) {
-            print cmd("(SRC1)");
-        }
-    }
-    if ("contrast" eq $ARGV[0]) {
-        my $current = cmd("(CON?)");
-        my ($curval) = $current =~ m/\(CON\?\)\(\d+-\d+,(\d+)\)/;
-        if ( ! defined $ARGV[1] ) {
-            print $current;
-        } elsif ("up" eq $ARGV[1]) {
-            my $newval = int($curval * 1.1);
-            print cmd("(CON$newval)");
-        } elsif ("down" eq $ARGV[1]) {
-            my $newval = int($curval * 0.9);
-            print cmd("(CON$newval)");
-        }
-    }
-}
-close ($fh);
+    p = InFocusProjector()
+    if (0 == len(args)):
+        p.status()
+    elif 'power' == args[0]:
+        p.power(args[1])
+    elif 'source' == args[0]:
+        p.source(args[1])
+    elif 'contrast' == args[0]:
+        p.contrast(args[1])
 
-exit 0;
-
-sub cmd {
-    my $cmd = shift;
-    print $fh ("$cmd\n");
-    my $R = <$fh>;
-    return $R;
-}
-
-sub power {
-    my $state = shift;
-    if ($state) {
-        print cmd("(PWR1)");
-    } else {
-        print cmd("(PWR0)");
-    }
-}
+if __name__ == '__main__':
+    main()
