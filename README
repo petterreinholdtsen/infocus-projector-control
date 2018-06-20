@@ -12,6 +12,9 @@ The protocol is documented on
 Inspiration:
 <URL: https://notes.pault.ag/hacking-a-projector-in-hy >
 
+A C++ implementation with a GUI can be found via
+<URL: https://github.com/tobiasebsen/ofxInFocusSerial >.
+
 Contact info
 ------------
 
