@@ -63,6 +63,13 @@ class InFocusProjector():
         elif ('down' == val):
             newval = int(curval * 0.9)
         print(self._cmd('(CON%d)'))
+    def navigate(self, state):
+        if ('up' == state):
+            print(self._cmd('(NAV1)'))
+        elif ('down' == state):
+            print(self._cmd('(NAV2)'))
+        elif ('select' == state):
+            print(self._cmd('(NAV3)'))
 
 def main():
     parser = OptionParser(usage="usage: %prog [options]",
@@ -85,6 +92,8 @@ def main():
         p.source(args[1])
     elif 'contrast' == args[0]:
         p.contrast(args[1])
+    elif 'navigate' == args[0]:
+        p.navigate(args[1])
 
 if __name__ == '__main__':
     main()
